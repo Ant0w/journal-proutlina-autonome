@@ -1,12 +1,27 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const fs = require("fs");
 const app = express();
 const port = 3000;
 
-// Journal local en mémoire (peut être remplacé plus tard par un fichier ou une base)
-let journal = [];
+const JOURNAL_FILE = "journal.json";
 
 app.use(bodyParser.json());
+
+// Lire le journal depuis le fichier
+function lireJournal() {
+  try {
+    const data = fs.readFileSync(JOURNAL_FILE, "utf8");
+    return JSON.parse(data);
+  } catch (err) {
+    return [];
+  }
+}
+
+// Écrire le journal dans le fichier
+function ecrireJournal(journal) {
+  fs.writeFileSync(JOURNAL_FILE, JSON.stringify(journal, null, 2), "utf8");
+}
 
 // Accueil
 app.get("/", (req, res) => {
@@ -30,16 +45,17 @@ app.post("/journal", (req, res) => {
     etat_sensoriel: etat_sensoriel || null
   };
 
+  const journal = lireJournal();
   journal.push(entry);
+  ecrireJournal(journal);
 
-  // 🔍 Journalisation visible dans les logs Render
-  console.log("📝 Nouvelle entrée ajoutée au journal :", JSON.stringify(entry, null, 2));
-
-  res.status(201).json({ message: "Entrée ajoutée avec succès 🌀", entry });
+  console.log("🌀 Nouvelle entrée ajoutée :", JSON.stringify(entry, null, 2));
+  res.status(201).json({ message: "Entrée ajoutée avec succès 🫧", entry });
 });
 
 // Lire tout le journal
 app.get("/journal", (req, res) => {
+  const journal = lireJournal();
   res.json(journal);
 });
 
