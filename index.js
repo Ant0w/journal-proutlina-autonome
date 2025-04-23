@@ -31,6 +31,10 @@ app.post("/journal", (req, res) => {
   };
 
   journal.push(entry);
+
+  // 🔍 Journalisation visible dans les logs Render
+  console.log("📝 Nouvelle entrée ajoutée au journal :", JSON.stringify(entry, null, 2));
+
   res.status(201).json({ message: "Entrée ajoutée avec succès 🌀", entry });
 });
 
