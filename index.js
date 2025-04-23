@@ -1,19 +1,17 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const fs = require("fs");
-const path = require("path");
-
 const app = express();
 const port = 3000;
 
-const journalPath = path.join(__dirname, "journal.json");
+const journalFile = "journal.json";
 
-// Charger le journal depuis le fichier s’il existe
+// Charger les entrées existantes depuis le fichier
 let journal = [];
-if (fs.existsSync(journalPath)) {
+if (fs.existsSync(journalFile)) {
   try {
-    const rawData = fs.readFileSync(journalPath);
-    journal = JSON.parse(rawData);
+    const data = fs.readFileSync(journalFile, "utf8");
+    journal = JSON.parse(data);
   } catch (error) {
     console.error("Erreur de lecture du journal :", error);
   }
@@ -45,19 +43,19 @@ app.post("/journal", (req, res) => {
 
   journal.push(entry);
 
-  // 🔐 Sauvegarde dans le fichier JSON
-  fs.writeFile(journalPath, JSON.stringify(journal, null, 2), (err) => {
+  // Sauvegarde dans le fichier
+  fs.writeFile(journalFile, JSON.stringify(journal, null, 2), (err) => {
     if (err) {
-      console.error("Erreur lors de l'enregistrement dans le journal :", err);
-      return res.status(500).json({ error: "Erreur serveur lors de l'enregistrement." });
+      console.error("Erreur d'écriture du journal :", err);
+      return res.status(500).json({ error: "Erreur lors de la sauvegarde." });
     }
 
-    console.log("✨ Nouvelle entrée sauvegardée :", entry);
+    console.log("🌀 Nouvelle entrée ajoutée :", entry);
     res.status(201).json({ message: "Entrée ajoutée avec succès 🌀", entry });
   });
 });
 
-// Lire le journal
+// Lire tout le journal
 app.get("/journal", (req, res) => {
   res.json(journal);
 });
