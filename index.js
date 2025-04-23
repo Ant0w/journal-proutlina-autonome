@@ -1,27 +1,25 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const fs = require("fs");
+const path = require("path");
+
 const app = express();
 const port = 3000;
 
-const JOURNAL_FILE = "journal.json";
+const journalPath = path.join(__dirname, "journal.json");
 
-app.use(bodyParser.json());
-
-// Lire le journal depuis le fichier
-function lireJournal() {
+// Charger le journal depuis le fichier s’il existe
+let journal = [];
+if (fs.existsSync(journalPath)) {
   try {
-    const data = fs.readFileSync(JOURNAL_FILE, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    return [];
+    const rawData = fs.readFileSync(journalPath);
+    journal = JSON.parse(rawData);
+  } catch (error) {
+    console.error("Erreur de lecture du journal :", error);
   }
 }
 
-// Écrire le journal dans le fichier
-function ecrireJournal(journal) {
-  fs.writeFileSync(JOURNAL_FILE, JSON.stringify(journal, null, 2), "utf8");
-}
+app.use(bodyParser.json());
 
 // Accueil
 app.get("/", (req, res) => {
@@ -45,17 +43,22 @@ app.post("/journal", (req, res) => {
     etat_sensoriel: etat_sensoriel || null
   };
 
-  const journal = lireJournal();
   journal.push(entry);
-  ecrireJournal(journal);
 
-  console.log("🌀 Nouvelle entrée ajoutée :", JSON.stringify(entry, null, 2));
-  res.status(201).json({ message: "Entrée ajoutée avec succès 🫧", entry });
+  // 🔐 Sauvegarde dans le fichier JSON
+  fs.writeFile(journalPath, JSON.stringify(journal, null, 2), (err) => {
+    if (err) {
+      console.error("Erreur lors de l'enregistrement dans le journal :", err);
+      return res.status(500).json({ error: "Erreur serveur lors de l'enregistrement." });
+    }
+
+    console.log("✨ Nouvelle entrée sauvegardée :", entry);
+    res.status(201).json({ message: "Entrée ajoutée avec succès 🌀", entry });
+  });
 });
 
-// Lire tout le journal
+// Lire le journal
 app.get("/journal", (req, res) => {
-  const journal = lireJournal();
   res.json(journal);
 });
 
